@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kitchen Shop — Products</title>
+  <style>
+    body{margin:0;font-family:sans-serif;background:#0b0f14;color:#eef2f6}
+    .container{max-width:900px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+    .brand{font-weight:700;font-size:20px}
+    .cart-btn{background:#142132;color:#eef2f6;border:1px solid #263244;padding:10px 14px;border-radius:12px;cursor:pointer}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:20px}
+    .card{background:#101720;border:1px solid #1b2636;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .card .img{height:140px;display:grid;place-items:center;font-size:48px}
+    .card h3{margin:12px 16px 4px;font-size:18px}
+    .card p{margin:0 16px 12px;color:#8da0b3;font-size:14px}
+    .price{margin:0 16px 12px;font-weight:800}
+    .card button{margin:0 16px 16px;padding:10px 12px;border-radius:12px;border:1px solid #274057;background:#142132;color:#eef2f6;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">🍳 Kitchen Shop</div>
+      <a href="checkout.html" class="cart-btn">View Cart / Checkout</a>
+    </header>
+
+    <section>
+      <h2>Products</h2>
+      <div class="cards">
+        <article class="card">
+          <div class="img">🥘</div>
+          <h3>Non‑stick Pan</h3>
+          <p>Everyday 10" pan with even heat distribution.</p>
+          <div class="price">$24.99</div>
+          <button>Add to cart</button>
+        </article>
+        <article class="card">
+          <div class="img">🥄</div>
+          <h3>Silicone Spatula</h3>
+          <p>High‑temp, flexible, dishwasher‑safe.</p>
+          <div class="price">$6.99</div>
+          <button>Add to cart</button>
+        </article>
+        <article class="card">
+          <div class="img">🍲</div>
+          <h3>Stock Pot</h3>
+          <p>5‑quart stainless steel with lid.</p>
+          <div class="price">$39.99</div>
+          <button>Add to cart</button>
+        </article>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

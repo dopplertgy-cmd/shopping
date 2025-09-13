@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kitchen Shop — Checkout</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#101720; --muted:#8da0b3; --text:#eef2f6;
+      --brand:#4cc9f0; --ring:0 0 0 3px rgba(114,239,221,.25);
+    }
+    html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica Neue,Arial;background:#0b0f14;color:var(--text)}
+    .container{max-width:900px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+    a{color:var(--brand);text-decoration:none}
+    .panel{background:var(--panel);border:1px solid #1b2636;border-radius:16px;padding:18px}
+    .field{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+    label{font-size:13px;color:var(--muted)}
+    input{padding:12px;border-radius:12px;border:1px solid #263244;background:#0b131c;color:var(--text)}
+    input:disabled{opacity:.55}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{padding:12px 14px;border-radius:12px;border:1px solid #274057;background:#142132;color:var(--text);cursor:pointer}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .notice{color:var(--muted);font-size:13px}
+
+    /* Modal */
+    .overlay{position:fixed;inset:0;background:rgba(3,8,14,.6);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:20px}
+    .hidden{display:none}
+    .modal{width:min(640px,96vw);background:var(--panel);border:1px solid #253448;border-radius:20px;padding:18px}
+    .modal h2{margin:6px 0 10px}
+    .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="index.html">← Continue shopping</a>
+      <strong>Checkout</strong>
+      <span class="notice">Demo only — no real charges</span>
+    </header>
+
+    <main class="panel" aria-labelledby="checkout-title">
+      <h1 id="checkout-title" style="margin-top:0">Payment Details</h1>
+      <p class="notice" id="hint">Please acknowledge the simulation notice to unlock the form.</p>
+      <form id="payForm" novalidate>
+        <div class="field">
+          <label for="name">Name on card</label>
+          <input id="name" name="name" type="text" placeholder="Alex Cook" required disabled>
+        </div>
+        <div class="field">
+          <label for="card">Card number</label>
+          <input id="card" name="card" inputmode="numeric" pattern="[0-9 ]{12,23}" placeholder="4242 4242 4242 4242" required disabled>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="exp">Expiry (MM/YY)</label>
+            <input id="exp" name="exp" inputmode="numeric" pattern="(0[1-9]|1[0-2])\/[0-9]{2}" placeholder="08/27" required disabled>
+          </div>
+          <div class="field">
+            <label for="cvc">CVC</label>
+            <input id="cvc" name="cvc" inputmode="numeric" pattern="[0-9]{3,4}" placeholder="123" required disabled>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="zip">ZIP / Postal code</label>
+            <input id="zip" name="zip" inputmode="numeric" pattern="[0-9A-Za-z\- ]{3,10}" placeholder="94107" required disabled>
+          </div>
+          <div class="field">
+            <label for="email">Email (receipt)</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required disabled>
+          </div>
+        </div>
+        <button id="purchaseBtn" class="btn" disabled>Make Purchase →</button>
+        <p id="formMsg" class="notice" role="status" aria-live="polite"></p>
+      </form>
+    </main>
+  </div>
+
+  <!-- Simulation Modal (opens on page load) -->
+  <div id="simModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+    <div class="modal">
+      <h2 id="modalTitle">Simulation Notice</h2>
+      <p id="modalDesc">This checkout is a <strong>simulation</strong>. No real money will be charged. To proceed, please confirm you understand.</p>
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin-top:6px">
+        <input id="agreeBox" type="checkbox" aria-describedby="agreeHelp">
+        <span>I understand this is only a simulation and no real money will be deducted.</span>
+      </label>
+      <div id="agreeHelp" class="notice">You must check this box to close the popup.</div>
+      <div class="actions">
+        <button id="closeModal" class="btn" disabled>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('payForm');
+    const fields = Array.from(form.querySelectorAll('input'));
+    const purchaseBtn = document.getElementById('purchaseBtn');
+    const formMsg = document.getElementById('formMsg');
+    const hint = document.getElementById('hint');
+
+    const simModal = document.getElementById('simModal');
+    const agreeBox = document.getElementById('agreeBox');
+    const closeModal = document.getElementById('closeModal');
+
+    // Gate: modal appears immediately (page reached after clicking cart)
+    window.addEventListener('DOMContentLoaded', () => {
+      // Modal is visible by default; focus the checkbox for accessibility
+      agreeBox.focus();
+    });
+
+    agreeBox.addEventListener('change', () => {
+      closeModal.disabled = !agreeBox.checked;
+    });
+
+    closeModal.addEventListener('click', () => {
+      if(!agreeBox.checked) return;
+      simModal.classList.add('hidden');
+      unlockPayment();
+    });
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape' && !closeModal.disabled){
+        simModal.classList.add('hidden');
+        unlockPayment();
+      }
+    });
+
+    let unlocked = false;
+    function unlockPayment(){
+      if(unlocked) return; unlocked = true;
+      fields.forEach(i=> i.disabled = false);
+      purchaseBtn.disabled = false; // re-gated by validation below
+      hint.textContent = 'Payment unlocked — enter mock details to continue.';
+      formMsg.textContent = '';
+    }
+
+    function formIsValid(){
+      return form.checkValidity();
+    }
+    function gatePurchase(){
+      purchaseBtn.disabled = !formIsValid();
+      formMsg.textContent = formIsValid() ? '' : 'Complete all required fields.';
+    }
+
+    form.addEventListener('input', gatePurchase);
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      if(!formIsValid()) { gatePurchase(); return; }
+      purchaseBtn.disabled = true;
+      purchaseBtn.textContent = 'Processing…';
+      setTimeout(()=>{ window.location.href = 'dashboard.html'; }, 650);
+    });
+  </script>
+</body>
+</html>
