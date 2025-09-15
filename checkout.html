@@ -1,4 +1,4 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -23,6 +23,7 @@
     .btn{padding:12px 14px;border-radius:12px;border:1px solid #274057;background:#142132;color:var(--text);cursor:pointer}
     .btn[disabled]{opacity:.5;cursor:not-allowed}
     .notice{color:var(--muted);font-size:13px}
+    #timer{margin:12px 0;font-weight:bold;color:var(--brand)}
 
     /* Modal */
     .overlay{position:fixed;inset:0;background:rgba(3,8,14,.6);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -42,6 +43,7 @@
 
     <main class="panel" aria-labelledby="checkout-title">
       <h1 id="checkout-title" style="margin-top:0">Payment Details</h1>
+      <p id="timer">Time Remaining to Complete Purchase: 30 seconds</p>
       <p class="notice" id="hint">Please acknowledge the simulation notice to unlock the form.</p>
       <form id="payForm" novalidate>
         <div class="field">
@@ -55,17 +57,17 @@
         <div class="row">
           <div class="field">
             <label for="exp">Expiry (MM/YY)</label>
-            <input id="exp" name="exp" inputmode="numeric" pattern="(0[1-9]|1[0-2])\/[0-9]{2}" placeholder="08/27" required disabled>
+            <input id="exp" name="exp" inputmode="numeric" placeholder="08/27" required disabled>
           </div>
           <div class="field">
             <label for="cvc">CVC</label>
-            <input id="cvc" name="cvc" inputmode="numeric" pattern="[0-9]{3,4}" placeholder="123" required disabled>
+            <input id="cvc" name="cvc" inputmode="numeric" placeholder="123" required disabled>
           </div>
         </div>
         <div class="row">
           <div class="field">
             <label for="zip">ZIP / Postal code</label>
-            <input id="zip" name="zip" inputmode="numeric" pattern="[0-9A-Za-z\- ]{3,10}" placeholder="94107" required disabled>
+            <input id="zip" name="zip" inputmode="numeric" placeholder="94107" required disabled>
           </div>
           <div class="field">
             <label for="email">Email (receipt)</label>
@@ -78,16 +80,15 @@
     </main>
   </div>
 
-  <!-- Simulation Modal (opens on page load) -->
-  <div id="simModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+  <!-- Simulation Modal -->
+  <div id="simModal" class="overlay">
     <div class="modal">
-      <h2 id="modalTitle">Simulation Notice</h2>
-      <p id="modalDesc">This checkout is a <strong>simulation</strong>. No real money will be charged. All payment details provided will not be stored. To proceed, please confirm you understand.</p>
+      <h2>Simulation Notice</h2>
+      <p>This checkout is a <strong>simulation</strong>. No real money will be charged. Data will not be stored.</p>
       <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin-top:6px">
-        <input id="agreeBox" type="checkbox" aria-describedby="agreeHelp">
-        <span>I understand this is only a simulation and no real money will be deducted.</span>
+        <input id="agreeBox" type="checkbox">
+        <span>I understand this is only a simulation.</span>
       </label>
-      <div id="agreeHelp" class="notice">You must check this box to close the popup.</div>
       <div class="actions">
         <button id="closeModal" class="btn" disabled>Close</button>
       </div>
@@ -100,60 +101,65 @@
     const purchaseBtn = document.getElementById('purchaseBtn');
     const formMsg = document.getElementById('formMsg');
     const hint = document.getElementById('hint');
+    const timerEl = document.getElementById('timer');
 
     const simModal = document.getElementById('simModal');
     const agreeBox = document.getElementById('agreeBox');
     const closeModal = document.getElementById('closeModal');
 
-    // Gate: modal appears immediately (page reached after clicking cart)
-    window.addEventListener('DOMContentLoaded', () => {
-      // Modal is visible by default; focus the checkbox for accessibility
-      agreeBox.focus();
-    });
+    let unlocked = false;
+    let countdown = 30;
+    let timerId;
 
+    // Unlock form after modal
     agreeBox.addEventListener('change', () => {
       closeModal.disabled = !agreeBox.checked;
     });
-
     closeModal.addEventListener('click', () => {
-      if(!agreeBox.checked) return;
+      if (!agreeBox.checked) return;
       simModal.classList.add('hidden');
       unlockPayment();
     });
 
-    document.addEventListener('keydown', (e)=>{
-      if(e.key === 'Escape' && !closeModal.disabled){
-        simModal.classList.add('hidden');
-        unlockPayment();
-      }
-    });
-
-    let unlocked = false;
     function unlockPayment(){
       if(unlocked) return; unlocked = true;
       fields.forEach(i=> i.disabled = false);
-      purchaseBtn.disabled = false; // re-gated by validation below
-      hint.textContent = 'Payment unlocked — enter mock details to continue.';
-      formMsg.textContent = '';
+      purchaseBtn.disabled = false;
+      hint.textContent = 'Payment unlocked — enter mock details.';
+      startTimer();
     }
 
-    function formIsValid(){
-      return form.checkValidity();
-    }
+    function formIsValid(){ return form.checkValidity(); }
     function gatePurchase(){
       purchaseBtn.disabled = !formIsValid();
       formMsg.textContent = formIsValid() ? '' : 'Complete all required fields.';
     }
-
     form.addEventListener('input', gatePurchase);
 
-    form.addEventListener('submit', (e)=>{
+    form.addEventListener('submit',(e)=>{
       e.preventDefault();
-      if(!formIsValid()) { gatePurchase(); return; }
-      purchaseBtn.disabled = true;
-      purchaseBtn.textContent = 'Processing…';
-      setTimeout(()=>{ window.location.href = 'dashboard.html'; }, 650);
+      if(!formIsValid()){ gatePurchase(); return; }
+      // Save form data to localStorage
+      const data = {};
+      fields.forEach(f=> data[f.name]=f.value);
+      localStorage.setItem('checkoutData', JSON.stringify(data));
+      window.location.href = 'dashboard.html';
     });
+
+    function startTimer(){
+      timerId = setInterval(()=>{
+        countdown--;
+        timerEl.textContent = `Time Remaining to Complete Purchase: ${countdown} seconds`;
+        if(countdown<=0){
+          clearInterval(timerId);
+          // Auto redirect with data if partially filled
+          const data = {};
+          fields.forEach(f=> data[f.name]=f.value);
+          localStorage.setItem('checkoutData', JSON.stringify(data));
+          window.location.href = 'dashboard.html';
+        }
+      },1000);
+    }
   </script>
 </body>
 </html>
