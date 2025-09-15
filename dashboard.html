@@ -1,4 +1,34 @@
-<!doctype HTML>
+<!doctype html>
 <html lang="en">
-    <p>Thanks for your credit card information!</p>
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard</title>
+  <style>
+    body{font-family:Arial, sans-serif;background:#0b0f14;color:#eef2f6;padding:20px}
+    .panel{background:#101720;border-radius:12px;padding:20px;max-width:600px;margin:auto}
+    h1{color:#4cc9f0}
+    dt{font-weight:bold;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h1>Dashboard</h1>
+    <p>Here’s the information you provided:</p>
+    <dl id="info"></dl>
+  </div>
+
+  <script>
+    const data = JSON.parse(localStorage.getItem('checkoutData')||'{}');
+    const info = document.getElementById('info');
+    if(Object.keys(data).length===0){
+      info.innerHTML = "<p>No data was provided.</p>";
+    } else {
+      for(const [key,val] of Object.entries(data)){
+        const dt=document.createElement('dt'); dt.textContent=key;
+        const dd=document.createElement('dd'); dd.textContent=val;
+        info.appendChild(dt); info.appendChild(dd);
+      }
+    }
+  </script>
+</body>
 </html>
